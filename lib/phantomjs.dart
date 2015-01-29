@@ -5,27 +5,32 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:mirrors';
-import 'package:path/path.dart' as path;
+import 'package:path/path.dart' as PathLib;
 
 class PhantomJS {
   static Process _process = null;
   static String _port = null;
+  static bool _debug = false;
 
-  static Future start([String port='9000']) {
+  static Future start([String port='9000', bool debug=false]) {
     bool firstResponse = true;
     _port = port;
+    _debug = debug;
 
     Completer completer = new Completer();
-    String webserverFilePath = path.dirname(path.current) + '/packages/phantomjs/webserver.js';
+    String webserverFilePath = PathLib.dirname(PathLib.current) + '/packages/phantomjs/webserver.js';
     Process.start('phantomjs', [webserverFilePath, '$_port'])
     .then((Process process) {
       _process = process;
       process.stdout
       .transform(UTF8.decoder)
       .listen((data) {
+        if(data.contains('[PhantomJS Log]') && _debug){
+          print(data);
+        }
+
         if (firstResponse) {
           firstResponse = false;
-
           if (data == 'started\n') {
             print('PhantomJS Started');
             completer.complete();
@@ -102,6 +107,12 @@ class Page {
     var newPage = new Page();
     newPage.id = pageId;
     return newPage;
+  }
+
+  Future render(String path) async {
+    var p = PathLib.join(PathLib.current, path);
+    await PhantomJS.makeRequest('page.render', [this.id, p]);
+    return true;
   }
 
   Future querySelector(String selector) async {

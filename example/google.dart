@@ -9,6 +9,7 @@ Future<dynamic> example() async {
   await page.open('http://google.com');
   String title = await page.evaluate('function(){ return document.title; }');
   print('Page title is "${title}"');
+  await page.render('google.png');
   page.close();
 
   // TODO:
