@@ -1,7 +1,11 @@
+library phantomjs;
+
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:mirrors';
+import 'package:path/path.dart' as path;
 
 class PhantomJS {
   static Process _process = null;
@@ -12,25 +16,30 @@ class PhantomJS {
     _port = port;
 
     Completer completer = new Completer();
-    Process.start('phantomjs', ['../webserver/webserver.js', '$_port'])
+    String webserverFilePath = path.dirname(path.current) + '/packages/phantomjs/webserver.js';
+    Process.start('phantomjs', [webserverFilePath, '$_port'])
     .then((Process process) {
       _process = process;
       process.stdout
       .transform(UTF8.decoder)
       .listen((data) {
-        if(firstResponse){
+        if (firstResponse) {
           firstResponse = false;
 
-          if(data == 'started\n'){
+          if (data == 'started\n') {
             print('PhantomJS Started');
             completer.complete();
-          } else if(data.contains('could not create web server')){
+          } else if (data.contains('could not create web server')) {
             throw new Exception('PhantomJS can not be started on port ${_port}');
           } else {
             throw new Exception(data);
           }
         }
-
+      });
+      process.stderr
+      .transform(UTF8.decoder)
+      .listen((data) {
+        print('PhantomJS Error: ' + data);
       });
     })
     .catchError((err) {
@@ -40,7 +49,7 @@ class PhantomJS {
     return completer.future;
   }
 
-  static stop(){
+  static stop() {
     _process.kill(ProcessSignal.SIGTERM);
     print('PhantomJS closed');
   }
@@ -93,5 +102,35 @@ class Page {
     var newPage = new Page();
     newPage.id = pageId;
     return newPage;
+  }
+
+  Future querySelector(String selector) async {
+    var _element = await PhantomJS.makeRequest(
+        'page.querySelector', [selector]);
+
+    Element element = new Element(this);
+  }
+}
+
+class Element {
+  Page page;
+
+  Element(Page this.page);
+}
+
+class ElementAttribute {
+  String _name;
+  String _value;
+  Element _element;
+
+  ElementAttribute(Element this._element);
+
+  String get name => this._name;
+
+  String get value => this._value;
+
+  Future<dynamic> set value(newValue) async {
+    this._value = newValue;
+
   }
 }

@@ -11,6 +11,11 @@ Future<dynamic> example() async {
   print('Page title is "${title}"');
   page.close();
 
+  // TODO:
+//  var elem = page.querySelector('#someId');
+//  elem.click();
+//  List<Attribute> attributes = elem.attributes;
+
   PhantomJS.stop();
 }
 
