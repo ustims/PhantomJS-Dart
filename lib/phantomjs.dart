@@ -18,7 +18,10 @@ class PhantomJS {
     _debug = debug;
 
     Completer completer = new Completer();
-    String webserverFilePath = PathLib.dirname(PathLib.current) + '/packages/phantomjs/webserver.js';
+    String currentPath = PathLib.dirname(PathLib.current);
+    String webserverFilePath =
+      [currentPath, 'packages', 'phantomjs', 'webserver.js']
+      .join(PathLib.separator);
     Process.start('phantomjs', [webserverFilePath, '$_port'])
     .then((Process process) {
       _process = process;
@@ -31,11 +34,11 @@ class PhantomJS {
 
         if (firstResponse) {
           firstResponse = false;
-          if (data == 'started\n') {
+          if (data.toString().indexOf('started') == 0) {
             print('PhantomJS Started');
             completer.complete();
           } else if (data.contains('could not create web server')) {
-            throw new Exception('PhantomJS can not be started on port ${_port}');
+            throw new Exception('PhantomJS can\'t be started on port ${_port}');
           } else {
             throw new Exception(data);
           }
@@ -55,8 +58,12 @@ class PhantomJS {
   }
 
   static stop() {
-    _process.kill(ProcessSignal.SIGTERM);
-    print('PhantomJS closed');
+    if(_process != null){
+      _process.kill(ProcessSignal.SIGTERM);
+      print('PhantomJS closed');
+    } else {
+      print('PhantomJS is already closed');
+    }
   }
 
   static Future makeRequest(String methodName, List arguments) {
@@ -93,7 +100,8 @@ class Page {
   }
 
   Future evaluate(String jsCode) async {
-    var results = await PhantomJS.makeRequest('page.evaluate', [this.id, jsCode]);
+    var results = await PhantomJS.makeRequest('page.evaluate',
+      [this.id, jsCode]);
     return results;
   }
 

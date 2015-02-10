@@ -1,7 +1,7 @@
 name: phantomjs
 author: Ustimenko Sergey <ustims@gmail.com>
 description: PhantomJS wrapper for Dart. Starts phantomjs as child proccess, runs webserver inside and provides a way to interact with it.
-version: 0.0.5
+version: 0.0.7
 homepage: https://github.com/ustims/PhantomJS-Dart
 dependencies:
   http: any
